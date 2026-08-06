@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backtracking, Live &mdash; Three Interactive Lectures</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="hub-glow"></div>
+
+<header class="hub-hero">
+  <div class="title-mark"><span class="dot"></span> LIVE ALGORITHM LECTURES</div>
+  <h1 class="animate-in">Backtracking,<br>Live.</h1>
+  <p class="lede animate-in">Three real backtracking algorithms, each running for real behind
+    a synchronized board, executing code, call stack, and variable inspector &mdash; not a
+    scripted animation standing in for one. Step through them line by line, or press play
+    and watch the recursion tree grow as dead ends get discovered and undone.</p>
+
+  <div class="hub-principle animate-in">
+    <div class="principle-step"><span class="principle-num">1</span><span>Choose</span><p>Pick a candidate for the current decision.</p></div>
+    <div class="principle-arrow">&rarr;</div>
+    <div class="principle-step"><span class="principle-num">2</span><span>Explore</span><p>Recurse, assuming that choice holds.</p></div>
+    <div class="principle-arrow">&rarr;</div>
+    <div class="principle-step"><span class="principle-num">3</span><span>Un-choose</span><p>If it leads nowhere, undo it and move on.</p></div>
+  </div>
+</header>
+
+<main class="hub-grid">
+
+  <a class="hub-card animate-in" href="sudoku/index.html">
+    <div class="hub-card-icon">
+      <svg viewBox="0 0 60 60"><g class="icon-grid">
+        <rect x="2" y="2" width="56" height="56" rx="3"></rect>
+        <line x1="21" y1="2" x2="21" y2="58"></line>
+        <line x1="39" y1="2" x2="39" y2="58"></line>
+        <line x1="2" y1="21" x2="58" y2="21"></line>
+        <line x1="2" y1="39" x2="58" y2="39"></line>
+      </g>
+      <text class="icon-digit" x="30" y="34">5</text></svg>
+    </div>
+    <div class="hub-card-body">
+      <h2>Sudoku Solver</h2>
+      <p>A row/column/box constraint gives backtracking a cheap way to reject bad guesses
+        instantly &mdash; the classic first example.</p>
+      <div class="hub-stats">
+        <span>9&times;9 board</span><span>20 blanks</span><span>3 dead ends</span>
+      </div>
+    </div>
+    <div class="hub-card-cta">Open demo &rarr;</div>
+  </a>
+
+  <a class="hub-card animate-in" href="graph-coloring/index.html">
+    <div class="hub-card-icon">
+      <svg viewBox="0 0 60 60"><g class="icon-graph">
+        <line x1="30" y1="10" x2="12" y2="34"></line>
+        <line x1="30" y1="10" x2="48" y2="34"></line>
+        <line x1="12" y1="34" x2="30" y2="50"></line>
+        <line x1="48" y1="34" x2="30" y2="50"></line>
+        <line x1="12" y1="34" x2="48" y2="34"></line>
+      </g>
+        <circle class="icon-node n1" cx="30" cy="10" r="6"></circle>
+        <circle class="icon-node n2" cx="12" cy="34" r="6"></circle>
+        <circle class="icon-node n3" cx="48" cy="34" r="6"></circle>
+        <circle class="icon-node n1" cx="30" cy="50" r="6"></circle>
+      </svg>
+    </div>
+    <div class="hub-card-body">
+      <h2>Graph Coloring</h2>
+      <p>The same three moves, generalized: no two vertices joined by an edge may share
+        a color, with only k colors on hand.</p>
+      <div class="hub-stats">
+        <span>10 vertices</span><span>3 colors</span><span>18 dead ends</span>
+      </div>
+    </div>
+    <div class="hub-card-cta">Open demo &rarr;</div>
+  </a>
+
+  <a class="hub-card animate-in" href="hamiltonian-path/index.html">
+    <div class="hub-card-icon">
+      <svg viewBox="0 0 60 60">
+        <g class="icon-graph-faint">
+          <line x1="10" y1="12" x2="50" y2="12"></line>
+          <line x1="10" y1="12" x2="10" y2="48"></line>
+          <line x1="50" y1="12" x2="50" y2="48"></line>
+          <line x1="10" y1="48" x2="30" y2="30"></line>
+          <line x1="50" y1="48" x2="30" y2="30"></line>
+        </g>
+        <path class="icon-path" d="M10,12 L50,12 L30,30 L10,48 L50,48" fill="none"></path>
+        <circle class="icon-node" cx="10" cy="12" r="5"></circle>
+        <circle class="icon-node" cx="50" cy="12" r="5"></circle>
+        <circle class="icon-node" cx="30" cy="30" r="5"></circle>
+        <circle class="icon-node" cx="10" cy="48" r="5"></circle>
+        <circle class="icon-node" cx="50" cy="48" r="5"></circle>
+      </svg>
+    </div>
+    <div class="hub-card-body">
+      <h2>Hamiltonian Path</h2>
+      <p>No shortcut constraint at all &mdash; a path can look fine for six steps and only
+        fail on the seventh, which is what makes backtracking's undo step earn its keep.</p>
+      <div class="hub-stats">
+        <span>7 vertices</span><span>13 edges</span><span>17 dead ends</span>
+      </div>
+    </div>
+    <div class="hub-card-cta">Open demo &rarr;</div>
+  </a>
+
+</main>
+
+<footer class="hub-footer">
+  <p>Every demo is fully self-contained and works offline &mdash; open any project's
+    <code>index.html</code> directly, no server required. Inside each: <kbd>&rarr;</kbd>/<kbd>space</kbd>
+    to advance, <kbd>&larr;</kbd> back, <kbd>&uarr;</kbd>/<kbd>&darr;</kbd> to step the live
+    trace, <kbd>k</kbd> to play/pause, <kbd>r</kbd> to restart.</p>
+</footer>
+
+<script src="js/tween.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

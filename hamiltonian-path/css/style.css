@@ -1,0 +1,636 @@
+/* =========================================================================
+   style.css
+   Design language: "the debugger console" - this deck teaches backtracking
+   by showing a live debugger-style trace of a real recursive solve, so the
+   whole visual system borrows from IDE/debugger conventions (line gutters,
+   breakpoint amber, call-stack rails) rather than generic slide-deck
+   chrome. Signature element: the synchronized four-panel trace grid with
+   its amber depth ladder, on slide 5.
+   ========================================================================= */
+
+:root {
+  /* ---- palette --------------------------------------------------- */
+  --bg-deep:      #0B0E14;
+  --bg-panel:     #12161F;
+  --bg-panel-alt: #161B26;
+  --bg-raised:    #1B2130;
+  --border:       #232A3B;
+  --border-soft:  #1B2130;
+
+  --text-primary: #E6E8EE;
+  --text-dim:     #808AA0;
+  --text-faint:   #4B5266;
+
+  --accent-amber: #E8A33D;   /* focus / current depth / breakpoint */
+  --accent-cyan:  #49D3C0;   /* success / solved path */
+  --accent-red:   #E8637A;   /* backtrack / dead end */
+  --accent-violet:#9C90F0;   /* given clues / secondary emphasis */
+
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif;
+  --font-sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow: hidden;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 700px at 15% -10%, rgba(232, 163, 61, 0.05), transparent 60%),
+    radial-gradient(1000px 600px at 100% 110%, rgba(73, 211, 192, 0.04), transparent 60%);
+}
+
+::selection { background: rgba(232, 163, 61, 0.35); }
+
+/* Respect reduced-motion preferences across the whole deck. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+button { font-family: inherit; }
+
+/* =========================================================================
+   Slide deck chrome
+   ========================================================================= */
+
+.reveal-deck {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  padding: 5.5vh 6vw 6vh;
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.slide.active {
+  display: flex;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.slide.prev { transform: translateX(-24px); }
+
+.slide-eyebrow {
+  font-family: var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--accent-amber);
+  margin-bottom: 0.6rem;
+}
+
+.slide h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 4.2vw, 3.4rem);
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+.slide h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.6vw, 2.15rem);
+  margin: 0 0 0.9rem;
+  letter-spacing: -0.01em;
+}
+
+.slide .lede {
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  color: var(--text-dim);
+  max-width: 62ch;
+  line-height: 1.55;
+  margin: 0 0 1.6rem;
+}
+
+.slide-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Deck-wide fixed chrome */
+
+.deck-progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--border-soft);
+  z-index: 50;
+}
+.deck-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-amber), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+.deck-dots {
+  position: fixed;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 50;
+}
+.deck-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.25s, transform 0.25s;
+}
+.deck-dot:hover { background: var(--text-dim); }
+.deck-dot.active { background: var(--accent-amber); transform: scale(1.35); }
+
+.deck-arrows {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  display: flex;
+  gap: 8px;
+  z-index: 50;
+}
+.deck-arrow {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.deck-arrow:hover { border-color: var(--accent-amber); transform: translateY(-1px); }
+.deck-arrow:active { transform: translateY(0); }
+
+/* =========================================================================
+   Fragments / click-to-reveal
+   ========================================================================= */
+
+.fragment {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.fragment.shown { opacity: 1; transform: translateY(0); }
+
+.animate-in {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.animate-in.animate-in-done { opacity: 1; transform: translateY(0); }
+
+.reveal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.reveal-toggle::before {
+  content: "+";
+  color: var(--accent-amber);
+  font-weight: 700;
+  transition: transform 0.25s;
+}
+.reveal-toggle.open::before { content: "\2212"; }
+.reveal-toggle:hover { border-color: var(--accent-amber); }
+
+.reveal-content {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.4s ease;
+  color: var(--text-dim);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+.reveal-content.open {
+  max-height: 260px;
+  opacity: 1;
+  margin-top: 10px;
+}
+
+/* =========================================================================
+   Generic content widgets reused across explainer slides
+   ========================================================================= */
+
+.pill-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 0.4rem 0 1.2rem; }
+.pill {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  flex: 1;
+  min-height: 0;
+}
+
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  color: var(--accent-amber);
+  font-weight: 600;
+}
+.card p { color: var(--text-dim); line-height: 1.6; margin: 0 0 8px; font-size: 0.95rem; }
+
+.mini-code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+/* Concept slide: tiny abstract recursion-tree sketch */
+.concept-tree-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.concept-tree-wrap svg .node circle { fill: var(--bg-raised); stroke: var(--border); stroke-width: 1.5; }
+.concept-tree-wrap svg .node text { fill: var(--text-dim); font-family: var(--font-mono); font-size: 9px; }
+.concept-tree-wrap svg .node.ok circle { fill: rgba(73,211,192,0.18); stroke: var(--accent-cyan); }
+.concept-tree-wrap svg .node.dead circle { fill: rgba(232,99,122,0.18); stroke: var(--accent-red); }
+.concept-tree-wrap svg .edge { stroke: var(--border); stroke-width: 1.5; }
+
+/* =========================================================================
+   Title slide
+   ========================================================================= */
+
+#slide-title {
+  justify-content: center;
+  align-items: flex-start;
+}
+.title-mark {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--accent-cyan);
+  letter-spacing: 0.1em;
+  margin-bottom: 1.6rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.title-mark .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan); }
+#slide-title h1 { font-size: clamp(2.6rem, 6vw, 4.6rem); }
+#slide-title .lede { font-size: clamp(1.05rem, 1.5vw, 1.3rem); }
+.title-hint {
+  margin-top: 2.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  display: flex;
+  gap: 22px;
+}
+.title-hint kbd {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+.title-board-peek { position: absolute; right: 7vw; top: 50%; transform: translateY(-50%); opacity: 0.9; }
+
+/* =========================================================================
+   LIVE DEMO SLIDE - the signature element
+   ========================================================================= */
+
+#slide-live-demo { padding-bottom: 3.4vh; }
+
+.demo-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.7rem; }
+.demo-header h2 { margin: 0; }
+.demo-note {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  color: var(--accent-amber);
+  min-height: 1.3em;
+}
+
+.demo-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 340px 1fr 300px;
+  grid-template-rows: 1fr auto auto;
+  gap: 14px;
+  grid-template-areas:
+    "board code   inspect"
+    "tree   tree   tree"
+    "ladder transport transport";
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.panel-head {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.panel-head .tag { color: var(--accent-amber); }
+
+/* ---- board panel (graph view) ---- */
+.panel-board { grid-area: board; transition: box-shadow 0.3s; }
+.panel-board.flash-place { box-shadow: 0 0 0 2px var(--accent-amber) inset; }
+.panel-board.flash-remove { box-shadow: 0 0 0 2px var(--accent-red) inset; }
+.panel-board.flash-success { box-shadow: 0 0 22px 2px var(--accent-cyan) inset; }
+.panel-board-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 12px; }
+
+#demo-board { width: 100%; height: 100%; max-width: 320px; max-height: 320px; }
+
+.graph-edge { stroke: var(--border); stroke-width: 1.6; transition: stroke 0.25s, stroke-width 0.25s; }
+.graph-edge.edge-trying { stroke: var(--accent-amber); stroke-width: 2.2; stroke-dasharray: 4 3; }
+.graph-edge.edge-invalid { stroke: var(--accent-red); }
+.graph-edge.edge-on-path { stroke: var(--accent-cyan); stroke-width: 2.6; }
+.graph-edge.edge-success { stroke: var(--accent-cyan); filter: drop-shadow(0 0 3px rgba(73,211,192,0.8)); }
+
+.graph-node circle {
+  fill: var(--bg-raised);
+  stroke: var(--border);
+  stroke-width: 2;
+  transition: fill 0.28s, stroke 0.28s, r 0.2s;
+}
+.graph-node text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--text-dim);
+  text-anchor: middle;
+  pointer-events: none;
+}
+.graph-node.node-start circle { stroke: var(--accent-violet); stroke-width: 2.5; }
+.graph-node.node-visited circle { fill: rgba(73,211,192,0.16); stroke: var(--accent-cyan); }
+.graph-node.node-visited text { fill: var(--text-primary); font-weight: 700; }
+.graph-node.node-focus circle { stroke: var(--accent-amber); stroke-width: 3; }
+.graph-node.node-place circle { animation: node-pop-in 0.34s cubic-bezier(.2,1.5,.4,1); }
+.graph-node.node-remove circle { animation: node-pop-out 0.3s ease; }
+.graph-node.node-deadend circle { animation: node-shake 0.35s; stroke: var(--accent-red); }
+.graph-node.node-success circle { animation: node-glow 1.1s ease; }
+
+@keyframes node-pop-in {
+  0% { r: 6; opacity: 0.4; }
+  60% { r: 17; }
+  100% { r: 14; opacity: 1; }
+}
+@keyframes node-pop-out {
+  0% { r: 14; }
+  100% { r: 10; }
+}
+@keyframes node-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+@keyframes node-glow {
+  0% { filter: drop-shadow(0 0 0 rgba(73,211,192,0)); }
+  40% { filter: drop-shadow(0 0 8px rgba(73,211,192,0.9)); }
+  100% { filter: drop-shadow(0 0 0 rgba(73,211,192,0)); }
+}
+
+/* ---- code panel ---- */
+.panel-code { grid-area: code; }
+.panel-code-body { flex: 1; overflow-y: auto; padding: 10px 0; }
+.code-line {
+  display: flex;
+  gap: 14px;
+  padding: 3px 16px;
+  font-family: var(--font-mono);
+  font-size: clamp(12px, 1.05vw, 14.5px);
+  white-space: pre;
+  border-left: 3px solid transparent;
+  transition: background 0.25s, border-color 0.25s;
+}
+.code-line.active {
+  background: rgba(232, 163, 61, 0.10);
+  border-left-color: var(--accent-amber);
+}
+.code-gutter { color: var(--text-faint); width: 1.4em; text-align: right; flex-shrink: 0; user-select: none; }
+.tok-keyword { color: #C792EA; }
+.tok-string { color: var(--accent-cyan); }
+.tok-number { color: var(--accent-amber); }
+.tok-comment { color: var(--text-faint); font-style: italic; }
+.tok-function { color: #82AAFF; }
+.tok-ident { color: var(--text-primary); }
+.tok-punct { color: var(--text-dim); }
+
+/* ---- inspector column (stack + variables stacked) ---- */
+.panel-inspect { grid-area: inspect; display: flex; flex-direction: column; gap: 14px; background: transparent; border: none; }
+.panel-stack, .panel-variables { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+
+.stack-body { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; transition: box-shadow 0.3s; }
+.stack-body.flash-deadend { box-shadow: 0 0 0 2px var(--accent-red) inset; }
+.stack-frame {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  animation: slide-up-in 0.25s ease;
+}
+.stack-frame.stack-top { border-color: var(--accent-amber); background: rgba(232,163,61,0.08); }
+.stack-depth { color: var(--accent-amber); font-weight: 700; }
+.stack-label { color: var(--text-dim); }
+.stack-empty { color: var(--text-faint); font-family: var(--font-mono); font-size: 0.8rem; padding: 10px; }
+@keyframes slide-up-in {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.variables-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.var-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 5px 6px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+}
+.var-row:hover { background: var(--bg-raised); }
+.var-key { color: var(--text-dim); }
+.var-value { color: var(--text-primary); font-weight: 600; }
+.var-value.var-event { color: var(--accent-cyan); font-weight: 500; text-transform: lowercase; }
+
+/* ---- recursion tree (spans same row visually via being inline in code col on small screens; primary spot is a dedicated strip) ---- */
+.panel-tree { grid-area: tree; max-height: 190px; }
+.tree-body { flex: 1; overflow: auto; padding: 6px; }
+#demo-tree { width: 100%; height: 100%; min-height: 150px; }
+.tree-edge { stroke: var(--border); stroke-width: 1.4; }
+.tree-node circle { stroke-width: 1.6; fill: var(--bg-raised); stroke: var(--border); transition: fill 0.3s, stroke 0.3s, r 0.2s; }
+.tree-node text { font-family: var(--font-mono); font-size: 6.5px; fill: var(--text-dim); text-anchor: middle; }
+.tree-node.tree-active circle { stroke: var(--accent-amber); }
+.tree-node.tree-on-path circle { stroke: var(--accent-cyan); fill: rgba(73,211,192,0.12); }
+.tree-node.tree-success circle { fill: var(--accent-cyan); stroke: var(--accent-cyan); }
+.tree-node.tree-deadend circle { fill: rgba(232,99,122,0.25); stroke: var(--accent-red); }
+.tree-node.tree-current circle { r: 12; filter: drop-shadow(0 0 4px rgba(232,163,61,0.7)); }
+
+/* ---- depth ladder ---- */
+.panel-ladder { grid-area: ladder; flex-direction: row; align-items: center; padding: 10px 14px; gap: 12px; }
+.ladder-track { display: flex; gap: 3px; align-items: flex-end; }
+.ladder-rung { width: 6px; height: 16px; background: var(--border-soft); border-radius: 2px; transition: background 0.2s, height 0.2s; }
+.ladder-rung.ladder-passed { background: var(--border); }
+.ladder-rung.ladder-active { background: var(--accent-amber); height: 22px; box-shadow: 0 0 6px rgba(232,163,61,0.7); }
+.ladder-label { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-amber); white-space: nowrap; }
+
+/* ---- transport controls ---- */
+.transport { grid-area: transport; flex-direction: row; align-items: center; gap: 16px; padding: 10px 16px; background: var(--bg-panel-alt); }
+.transport-buttons { display: flex; gap: 8px; }
+.tbtn {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.1s, background 0.2s;
+}
+.tbtn:hover:not(:disabled) { border-color: var(--accent-amber); }
+.tbtn:active:not(:disabled) { transform: scale(0.96); }
+.tbtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.tbtn.is-playing { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+.step-counter { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); min-width: 92px; }
+
+.scrub-wrap { flex: 1; display: flex; align-items: center; gap: 10px; }
+#step-scrubber { flex: 1; accent-color: var(--accent-amber); }
+
+.speed-wrap { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); }
+#speed-range { accent-color: var(--accent-amber); }
+#speed-label { width: 68px; }
+
+/* =========================================================================
+   Recap slide
+   ========================================================================= */
+.recap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.recap-grid .card .big { font-family: var(--font-mono); color: var(--accent-cyan); font-size: 1.6rem; font-weight: 700; }
+
+.end-actions { display: flex; gap: 14px; margin-top: 1.4rem; }
+.end-actions .tbtn { padding: 10px 18px; font-size: 0.85rem; }
+
+/* =========================================================================
+   Responsive: laptop / tablet / narrower projectors
+   ========================================================================= */
+
+@media (max-width: 1180px) {
+  .demo-grid {
+    grid-template-columns: 300px 1fr 260px;
+  }
+  .two-col { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .deck-dots, .deck-arrows { display: none; }
+  .slide { padding: 4vh 5vw 4vh; }
+  .demo-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto auto;
+    grid-template-areas:
+      "board inspect"
+      "code code"
+      "tree tree"
+      "ladder ladder"
+      "transport transport";
+  }
+  .panel-tree { grid-column: auto; max-height: 220px; }
+  .recap-grid { grid-template-columns: 1fr; }
+  .transport { flex-wrap: wrap; }
+}
+
+/* 1920x1080 projector: give the demo grid more breathing room */
+@media (min-width: 1700px) {
+  .demo-grid { grid-template-columns: 400px 1fr 340px; gap: 18px; }
+  .slide { padding: 6vh 7vw 6vh; }
+}
+
+/* ---- link back to the suite hub (added when nested under backtracking-suite/) ---- */
+.hub-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.hub-link:hover { border-color: var(--accent-amber); color: var(--accent-amber); }
+

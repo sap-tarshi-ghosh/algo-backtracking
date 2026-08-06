@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backtracking, Live &mdash; Solving Sudoku One Recursive Call at a Time</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="reveal-deck">
+
+  <!-- ==================================================================
+       SLIDE 1 - Title
+       ================================================================== -->
+  <section class="slide" id="slide-title">
+    <a class="hub-link" href="../index.html">&larr; All backtracking demos</a>
+    <div class="title-mark"><span class="dot"></span> LIVE ALGORITHM LECTURE</div>
+    <h1 class="animate-in">Backtracking,<br>Live.</h1>
+    <p class="lede animate-in">We're going to watch a real recursive Sudoku solver think &mdash;
+      line by line, call by call &mdash; instead of just reading its code. Every panel
+      you'll see later is driven by the actual algorithm running, not a scripted animation.</p>
+    <div class="title-hint animate-in">
+      <span><kbd>&rarr;</kbd> / <kbd>space</kbd> next</span>
+      <span><kbd>&larr;</kbd> back</span>
+      <span><kbd>&uarr;</kbd> <kbd>&darr;</kbd> step the demo</span>
+      <span><kbd>k</kbd> play/pause &nbsp; <kbd>r</kbd> restart</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SLIDE 2 - What is backtracking?
+       ================================================================== -->
+  <section class="slide" id="slide-concept">
+    <div class="slide-eyebrow">01 &middot; The idea</div>
+    <h2>Guess. Check. Undo if wrong.</h2>
+    <p class="lede">That's the entire algorithm. Backtracking explores a decision one step
+      at a time, and the moment a decision leads nowhere, it <em>undoes</em> that exact
+      decision and tries the next option &mdash; nothing more clever than that.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>The three moves</h3>
+        <p><strong>Choose</strong> &mdash; pick a candidate value for the current empty cell.</p>
+        <p><strong>Explore</strong> &mdash; recurse into the rest of the board assuming that choice.</p>
+        <p><strong>Un-choose</strong> &mdash; if that recursive exploration fails everywhere,
+          erase the value and let the loop try the next candidate.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">Why "undo" instead of starting over?</button>
+        <div class="reveal-content">Restarting from scratch would re-solve every cell that
+          was already correct. Undoing only the most recent guess keeps everything that
+          worked and only re-examines the one decision that didn't &mdash; that's the entire
+          efficiency argument for backtracking over brute force.</div>
+      </div>
+      <div class="card animate-in">
+        <h3>Why Sudoku is a clean example</h3>
+        <p>Each empty cell is a decision point with at most 9 candidates. The row/column/box
+          rules give a cheap, local way to reject bad guesses immediately &mdash; so most
+          "dead ends" are discovered fast, close to where they happened.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">Is this the fastest way to solve Sudoku?</button>
+        <div class="reveal-content">No &mdash; production solvers add constraint propagation
+          and pick the most-constrained cell first. This deck uses the plain, naive version
+          on purpose: fewer tricks means the recursion itself stays easy to see.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SLIDE 3 - The algorithm, walked through
+       ================================================================== -->
+  <section class="slide" id="slide-code">
+    <div class="slide-eyebrow">02 &middot; The algorithm</div>
+    <h2>Thirteen lines, read top to bottom</h2>
+    <p class="lede">This is the exact function the live demo executes later &mdash; not
+      pseudocode standing in for it. Click through each block to see what it's responsible for.</p>
+
+    <div class="slide-body">
+      <pre class="mini-code" id="walkthrough-code"><span class="tok-keyword">function</span> <span class="tok-function">solve</span>(board, depth) {
+  <span class="tok-keyword">const</span> cell = <span class="tok-function">findEmptyCell</span>(board);
+  <span class="tok-keyword">if</span> (cell === <span class="tok-keyword">null</span>) <span class="tok-keyword">return</span> <span class="tok-keyword">true</span>; <span class="tok-comment">// solved!</span>
+  <span class="tok-keyword">const</span> [row, col] = cell;
+  <span class="tok-keyword">for</span> (<span class="tok-keyword">let</span> num = <span class="tok-number">1</span>; num &lt;= <span class="tok-number">9</span>; num++) {
+    <span class="tok-keyword">if</span> (<span class="tok-function">isValid</span>(board, row, col, num)) {
+      board[row][col] = num;              <span class="tok-comment">// place</span>
+      <span class="tok-keyword">if</span> (<span class="tok-function">solve</span>(board, depth + <span class="tok-number">1</span>)) <span class="tok-keyword">return</span> <span class="tok-keyword">true</span>;
+      board[row][col] = <span class="tok-number">0</span>;                <span class="tok-comment">// undo (backtrack)</span>
+    }
+  }
+  <span class="tok-keyword">return</span> <span class="tok-keyword">false</span>;  <span class="tok-comment">// dead end, let caller backtrack</span>
+}</pre>
+
+      <div class="two-col">
+        <div class="card animate-in">
+          <h3>Base case (lines 2&ndash;4)</h3>
+          <p>Scan for an empty cell. If there isn't one, every cell is filled validly and
+            the recursion can unwind with <code>true</code> all the way to the top.</p>
+        </div>
+        <div class="card animate-in">
+          <h3>The recursive step (lines 5&ndash;11)</h3>
+          <p>Try each candidate 1&ndash;9. A valid one gets placed, then the function calls
+            <em>itself</em> on the same board with one more cell filled in. If that deeper
+            call ever returns <code>false</code>, line 9 erases the guess before the loop moves on.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SLIDE 4 - Recursion tree concept
+       ================================================================== -->
+  <section class="slide" id="slide-tree-concept">
+    <div class="slide-eyebrow">03 &middot; Seeing the recursion</div>
+    <h2>Every call is a node. Every guess is an edge.</h2>
+    <p class="lede">Stack depth and recursion tree depth are the same number &mdash; the
+      tree below is just the call stack's entire history laid out at once, instead of only
+      showing you the top.</p>
+    <div class="two-col slide-body">
+      <div class="concept-tree-wrap animate-in">
+        <svg viewBox="0 0 320 200" width="100%" height="220">
+          <line class="edge" x1="160" y1="30" x2="90" y2="90"></line>
+          <line class="edge" x1="160" y1="30" x2="230" y2="90"></line>
+          <line class="edge" x1="90" y1="90" x2="50" y2="150"></line>
+          <line class="edge" x1="90" y1="90" x2="130" y2="150"></line>
+          <line class="edge" x1="230" y1="90" x2="270" y2="150"></line>
+          <g class="node"><circle cx="160" cy="30" r="14"></circle><text x="160" y="34">root</text></g>
+          <g class="node"><circle cx="90" cy="90" r="14"></circle><text x="90" y="94">try 3</text></g>
+          <g class="node"><circle cx="230" cy="90" r="14"></circle><text x="230" y="94">try 7</text></g>
+          <g class="node dead"><circle cx="50" cy="150" r="14"></circle><text x="50" y="154">dead</text></g>
+          <g class="node ok"><circle cx="130" cy="150" r="14"></circle><text x="130" y="154">ok</text></g>
+          <g class="node ok"><circle cx="270" cy="150" r="14"></circle><text x="270" y="154">ok</text></g>
+        </svg>
+      </div>
+      <div class="card animate-in">
+        <h3>Reading the tree</h3>
+        <p><span style="color:var(--accent-red)">&#9679;</span> A red node is a call that tried every
+          candidate and none worked &mdash; a genuine dead end that forces its parent to backtrack.</p>
+        <p><span style="color:var(--accent-cyan)">&#9679;</span> A cyan node lies on the path that
+          eventually reached the solved board.</p>
+        <p>Branches that never got explored because an earlier sibling already succeeded stay
+          gray &mdash; the algorithm never wastes time on them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SLIDE 5 - LIVE DEMO (signature slide)
+       ================================================================== -->
+  <section class="slide" id="slide-live-demo">
+    <div class="demo-header">
+      <div>
+        <div class="slide-eyebrow">04 &middot; Live execution</div>
+        <h2>Watch it solve, one line at a time</h2>
+      </div>
+      <div class="demo-note" id="demo-note"></div>
+    </div>
+
+    <div class="demo-grid">
+      <div class="panel panel-board" id="panel-board">
+        <div class="panel-head"><span>Sudoku Board</span><span class="tag">live</span></div>
+        <div class="panel-board-body" id="demo-board"></div>
+      </div>
+
+      <div class="panel panel-code">
+        <div class="panel-head"><span>Executing Code</span><span class="tag" id="demo-step-counter">step 1 / 1</span></div>
+        <div class="panel-code-body" id="demo-code"></div>
+      </div>
+
+      <div class="panel-inspect">
+        <div class="panel-stack" id="panel-stack">
+          <div class="panel-head"><span>Recursion Stack</span></div>
+          <div class="stack-body" id="demo-stack"></div>
+        </div>
+        <div class="panel-variables">
+          <div class="panel-head"><span>Variable Inspector</span></div>
+          <div class="variables-body" id="demo-variables"></div>
+        </div>
+      </div>
+
+      <div class="panel panel-tree">
+        <div class="panel-head"><span>Recursion Tree</span><span class="tag">grows live as calls happen</span></div>
+        <div class="tree-body"><svg id="demo-tree"></svg></div>
+      </div>
+
+      <div class="panel panel-ladder">
+        <span class="panel-head" style="border:none;padding:0;">Depth</span>
+        <div id="demo-ladder"></div>
+      </div>
+
+      <div class="panel transport">
+        <div class="transport-buttons">
+          <button class="tbtn" id="btn-restart" title="Restart (r)">&#8634; Restart</button>
+          <button class="tbtn" id="btn-prev" title="Previous step">&#8592; Prev</button>
+          <button class="tbtn" id="btn-play-pause" title="Play / Pause (k)">&#9654; Play</button>
+          <button class="tbtn" id="btn-next" title="Next step">Next &#8594;</button>
+        </div>
+        <div class="scrub-wrap">
+          <input type="range" id="step-scrubber" min="0" max="1" value="0" step="1">
+        </div>
+        <div class="speed-wrap">
+          <span>Speed</span>
+          <input type="range" id="speed-range" min="1" max="4" value="2" step="1">
+          <span id="speed-label">Normal</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SLIDE 6 - Recap
+       ================================================================== -->
+  <section class="slide" id="slide-recap">
+    <div class="slide-eyebrow">05 &middot; Recap</div>
+    <h2>What you just watched</h2>
+    <p class="lede">Three ideas, all visible directly in the trace you just stepped through.</p>
+    <div class="recap-grid slide-body">
+      <div class="card animate-in">
+        <div class="big">O(9^m)</div>
+        <h3>Worst case</h3>
+        <p>Where m is the number of empty cells &mdash; each has up to 9 candidates. Row/column/box
+          checks prune this drastically in practice, which is why the live trace stayed short.</p>
+      </div>
+      <div class="card animate-in">
+        <div class="big">depth = stack size</div>
+        <h3>Recursion is the call stack</h3>
+        <p>The depth ladder you watched climb and fall was, frame for frame, the true size of
+          the JavaScript call stack during the solve &mdash; not a simulated counter.</p>
+      </div>
+      <div class="card animate-in">
+        <div class="big">undo &ne; restart</div>
+        <h3>Backtracking's whole trick</h3>
+        <p>Every red "dead end" you saw erased exactly one decision and resumed &mdash; the
+          rest of the board's progress was never touched.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SLIDE 7 - End
+       ================================================================== -->
+  <section class="slide" id="slide-end">
+    <div class="slide-eyebrow">Fin</div>
+    <h1>Go replay it.</h1>
+    <p class="lede">Jump back to the live demo and scrub through the trace as many times as
+      you'd like &mdash; try slowing it down around one of the three dead ends and predicting
+      the next line before it highlights.</p>
+    <div class="end-actions">
+      <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(5)').click()">&#8592; Back to live demo</button>
+      <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(1)').click()">&#8634; Restart deck</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- =====================================================================
+     Scripts. Loaded as plain <script> tags in dependency order - this is
+     a genuinely offline project (see README.md), so nothing here points
+     at a CDN. tween.js and highlight.js are hand-written, dependency-free
+     stand-ins for Anime.js/GSAP and Prism.js respectively.
+     ===================================================================== -->
+<script src="js/tween.js"></script>
+<script src="js/highlight.js"></script>
+<script src="js/data.js"></script>
+<script src="js/solver.js"></script>
+<script src="js/visualizer.js"></script>
+<script src="js/player.js"></script>
+<script src="js/slides.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+/* =========================================================================
+   style.css (hub)
+   Same design tokens as the three demos ("the debugger console") so the
+   whole suite reads as one family, but this page is a static landing page,
+   not a slide deck - it scrolls, and there's no keyboard-driven navigation.
+   ========================================================================= */
+
+:root {
+  --bg-deep:      #0B0E14;
+  --bg-panel:     #12161F;
+  --bg-panel-alt: #161B26;
+  --bg-raised:    #1B2130;
+  --border:       #232A3B;
+  --border-soft:  #1B2130;
+
+  --text-primary: #E6E8EE;
+  --text-dim:     #808AA0;
+  --text-faint:   #4B5266;
+
+  --accent-amber: #E8A33D;
+  --accent-cyan:  #49D3C0;
+  --accent-red:   #E8637A;
+  --accent-violet:#9C90F0;
+
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif;
+  --font-sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+body { position: relative; overflow-x: hidden; }
+
+.hub-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(1200px 700px at 15% -10%, rgba(232, 163, 61, 0.07), transparent 60%),
+    radial-gradient(1000px 700px at 100% 20%, rgba(73, 211, 192, 0.05), transparent 60%),
+    radial-gradient(900px 600px at 50% 120%, rgba(156, 144, 240, 0.05), transparent 60%);
+}
+
+::selection { background: rgba(232, 163, 61, 0.35); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+.animate-in { opacity: 0; transform: translateY(16px); transition: opacity 0.55s ease, transform 0.55s ease; }
+.animate-in.animate-in-done { opacity: 1; transform: translateY(0); }
+
+/* =========================================================================
+   Hero
+   ========================================================================= */
+
+.hub-hero {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 9vh 6vw 5vh;
+  text-align: left;
+}
+
+.title-mark {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--accent-cyan);
+  letter-spacing: 0.1em;
+  margin-bottom: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.title-mark .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan); }
+
+.hub-hero h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  margin: 0 0 0.9rem;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+.hub-hero .lede {
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  color: var(--text-dim);
+  max-width: 66ch;
+  line-height: 1.6;
+  margin: 0 0 2.2rem;
+}
+
+.hub-principle {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.principle-step {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  min-width: 160px;
+  flex: 1;
+}
+.principle-step span:not(.principle-num) {
+  display: block;
+  font-family: var(--font-mono);
+  color: var(--accent-amber);
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+.principle-num {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-faint);
+}
+.principle-step p { margin: 6px 0 0; color: var(--text-dim); font-size: 0.86rem; line-height: 1.5; }
+.principle-arrow { display: flex; align-items: center; color: var(--text-faint); font-size: 1.2rem; }
+
+/* =========================================================================
+   Card grid
+   ========================================================================= */
+
+.hub-grid {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 1vh 6vw 8vh;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.hub-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+}
+.hub-card:hover {
+  border-color: var(--accent-amber);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.hub-card-icon { width: 60px; height: 60px; }
+.hub-card-icon svg { width: 100%; height: 100%; }
+.icon-grid rect, .icon-grid line { stroke: var(--border); fill: none; stroke-width: 1.5; }
+.icon-digit { fill: var(--accent-violet); font-family: var(--font-mono); font-size: 20px; text-anchor: middle; font-weight: 700; }
+.icon-graph line { stroke: var(--border); stroke-width: 1.5; }
+.icon-node { fill: var(--bg-raised); stroke: var(--border); stroke-width: 1.5; }
+.icon-node.n1 { fill: rgba(232,163,61,0.35); stroke: var(--accent-amber); }
+.icon-node.n2 { fill: rgba(73,211,192,0.35); stroke: var(--accent-cyan); }
+.icon-node.n3 { fill: rgba(156,144,240,0.35); stroke: var(--accent-violet); }
+.icon-graph-faint line { stroke: var(--border-soft); stroke-width: 1.5; }
+.icon-path { stroke: var(--accent-cyan); stroke-width: 2; }
+
+.hub-card-body h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.hub-card-body p { margin: 0; color: var(--text-dim); font-size: 0.92rem; line-height: 1.55; }
+
+.hub-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.hub-stats span {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.hub-card-cta {
+  margin-top: auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent-amber);
+}
+
+/* =========================================================================
+   Footer
+   ========================================================================= */
+
+.hub-footer {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 6vw 8vh;
+}
+.hub-footer p {
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.hub-footer code {
+  font-family: var(--font-mono);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--text-dim);
+}
+.hub-footer kbd {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+
+@media (max-width: 980px) {
+  .hub-grid { grid-template-columns: 1fr; }
+  .hub-principle { flex-direction: column; }
+  .principle-arrow { display: none; }
+}

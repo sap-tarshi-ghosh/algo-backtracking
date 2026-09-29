@@ -62,8 +62,45 @@
   </section>
 
   <!-- ============================================================== -->
+  <section class="slide" id="slide-brute-force">
+    <div class="slide-eyebrow">02 &middot; Why not brute force?</div>
+    <h2>The obvious approach, first</h2>
+    <p class="lede">Before backtracking, it's worth seeing the approach it replaces:
+      generate every possible ordering of the vertices, then check whether consecutive
+      vertices in that ordering are actually connected by an edge.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Generate &amp; test</h3>
+        <p>List every permutation of the n vertices, then walk each one checking whether
+          every consecutive pair is joined by an edge in the graph. If any pair isn't
+          connected, discard that entire ordering and move to the next permutation.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">How many permutations is that, really?</button>
+        <div class="reveal-content">This graph has 7 vertices, so brute force would
+          consider up to 7! = 5,040 orderings (or 6! = 720 if the start vertex is fixed, as
+          it is here) before checking a single edge. On a 20-vertex graph that same idea
+          means roughly 19! &asymp; 1.2 &times; 10<sup>17</sup> orderings &mdash; this is where
+          the two approaches' practical difference becomes enormous.</div>
+      </div>
+      <div class="card animate-in">
+        <h3>What backtracking changes</h3>
+        <p>Instead of building a full ordering and checking it once at the end,
+          backtracking checks for an edge the moment it tries to extend the path to a new
+          vertex. An extension that isn't actually connected is never explored further
+          &mdash; no time is spent completing an ordering that was already impossible after
+          its second step.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">So is backtracking a different algorithm?</button>
+        <div class="reveal-content">Not really &mdash; it's the same generate-and-test idea,
+          just interleaved with validation instead of run afterward. That's the entire
+          trick: it turns "check every finished ordering" into "check one edge at a time
+          and abandon impossible paths immediately."</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
   <section class="slide" id="slide-code">
-    <div class="slide-eyebrow">02 &middot; The algorithm</div>
+    <div class="slide-eyebrow">03 &middot; The algorithm</div>
     <h2>Twelve lines, read top to bottom</h2>
     <p class="lede">This is the exact function the live demo executes &mdash; neighbors of
       the current last vertex are tried in ascending order, starting the path at vertex 0.</p>
@@ -101,7 +138,7 @@
 
   <!-- ============================================================== -->
   <section class="slide" id="slide-tree-concept">
-    <div class="slide-eyebrow">03 &middot; Seeing the recursion</div>
+    <div class="slide-eyebrow">04 &middot; Seeing the recursion</div>
     <h2>Every call is a node. Every extension is an edge.</h2>
     <p class="lede">The recursion tree below is the entire call-stack history laid out at
       once, instead of only showing you the current top frame.</p>
@@ -136,7 +173,7 @@
   <section class="slide" id="slide-live-demo">
     <div class="demo-header">
       <div>
-        <div class="slide-eyebrow">04 &middot; Live execution</div>
+        <div class="slide-eyebrow">05 &middot; Live execution</div>
         <h2>Watch the path grow, one line at a time</h2>
       </div>
       <div class="demo-note" id="demo-note"></div>
@@ -194,8 +231,105 @@
   </section>
 
   <!-- ============================================================== -->
+  <section class="slide" id="slide-complexity">
+    <div class="slide-eyebrow">06 &middot; Complexity &amp; trade-offs</div>
+    <h2>What backtracking actually buys you</h2>
+    <p class="lede">n is the number of vertices (7 here). Both approaches share the same
+      worst-case bound &mdash; there's no local rule here (unlike Sudoku's row/column/box
+      check) to prune most branches early, so the gap between them is smaller than in the
+      other two demos, but backtracking still avoids fully building orderings that fail early.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Time &amp; space</h3>
+        <table class="complexity-table">
+          <tr><th>Metric</th><th>Brute force</th><th>Backtracking</th></tr>
+          <tr><td class="metric">Best case</td><td>&Omega;(n!) &mdash; still generates every ordering</td><td>O(n) &mdash; a valid path found on the very first attempt at each step</td></tr>
+          <tr><td class="metric">Worst case</td><td>O(n!&middot;n) &mdash; generate, then validate each ordering</td><td>O(n!) &mdash; same bound, pruned as soon as an edge is missing</td></tr>
+          <tr><td class="metric">Space</td><td>O(n) per candidate ordering held</td><td>O(n) recursion depth + the path/visited arrays</td></tr>
+        </table>
+        <p style="margin-top:10px;">On this graph: brute force checks up to 6! = 720
+          orderings (start fixed); the live demo you ran needed 199 steps.</p>
+      </div>
+      <div class="card animate-in">
+        <h3>Advantages &amp; disadvantages</h3>
+        <ul class="pro-con-list pros">
+          <li>Abandons an ordering the instant an edge is missing, instead of building it fully first</li>
+          <li>Simple and general &mdash; works on any graph, directed or undirected, without modification</li>
+          <li>Complete: guaranteed to find a Hamiltonian path if one exists</li>
+          <li>Extends naturally to Hamiltonian cycles by requiring a final edge back to the start</li>
+        </ul>
+        <ul class="pro-con-list cons" style="margin-top:10px;">
+          <li>Worst-case time is factorial &mdash; the worst family of problems in this entire deck</li>
+          <li>No cheap local constraint (like Sudoku's row/box rule) to prune most branches early</li>
+          <li>Sparse, tricky graphs can force deep backtracking with little advance warning</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <section class="slide" id="slide-alternatives">
+    <div class="slide-eyebrow">07 &middot; Alternative approaches</div>
+    <h2>Smarter than plain backtracking</h2>
+    <p class="lede">Two techniques that push past factorial-time backtracking, at the cost
+      of memory or of a strict worst-case guarantee.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Bitmask dynamic programming</h3>
+        <p>Represent "which vertices have been visited" as a bitmask, and let
+          <code>dp[mask][v]</code> mean "a path visiting exactly the vertices in mask,
+          ending at v, exists." Building this table bottom-up costs
+          O(2<sup>n</sup>&middot;n) time and O(2<sup>n</sup>&middot;n) space &mdash; still
+          exponential, but a dramatic improvement over O(n!) for moderate n (this is the
+          same Held&ndash;Karp idea used for the Traveling Salesman Problem).</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">Why trade time for memory here?</button>
+        <div class="reveal-content">2<sup>n</sup>&middot;n grows far slower than n! &mdash;
+          for n = 20, n! is about 2.4 &times; 10<sup>18</sup> while 2<sup>n</sup>&middot;n is
+          about 2 &times; 10<sup>7</sup>. The DP table does use real memory, which is why
+          this approach stops being practical once n gets into the high 20s or 30s.</div>
+      </div>
+      <div class="card animate-in">
+        <h3>Branch and bound</h3>
+        <p>Keep backtracking's exact search structure, but add a bounding check before
+          recursing: for instance, verify the remaining unvisited vertices are still
+          reachable from the current position at all, or that no unvisited vertex has
+          become totally cut off. Branches that fail the check are skipped without ever
+          being explored &mdash; the worst-case bound is unchanged, but many real graphs see
+          a large chunk of the search tree pruned away.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <section class="slide" id="slide-applications">
+    <div class="slide-eyebrow">08 &middot; Real-world applications</div>
+    <h2>The same shape shows up outside graphs</h2>
+    <p class="lede">"Visit everything exactly once, following only the connections that
+      actually exist" turns out to describe quite a few practical problems.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Task sequencing</h3>
+        <p>When tasks (or job-shop operations, or DNA fragments in sequencing-by-
+          hybridization) must each be performed exactly once and only certain orderings are
+          physically or logically valid, finding a feasible full sequence is exactly a
+          Hamiltonian path search over a graph of "can follow" relationships.</p>
+      </div>
+      <div class="card animate-in">
+        <h3>Network traversal</h3>
+        <p>Inspection routes, certain vehicle-routing variants, and network-testing
+          procedures that need to visit every node in a network exactly once (rather than
+          find the shortest tour, which is the related Traveling Salesman Problem) reduce
+          directly to Hamiltonian path search over the network's connectivity graph.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
   <section class="slide" id="slide-recap">
-    <div class="slide-eyebrow">05 &middot; Recap</div>
+    <div class="slide-eyebrow">09 &middot; Recap</div>
     <h2>What you just watched</h2>
     <p class="lede">Three ideas, all visible directly in the trace you just stepped through.</p>
     <div class="recap-grid slide-body">
@@ -221,6 +355,21 @@
   </section>
 
   <!-- ============================================================== -->
+  <section class="slide" id="slide-references">
+    <div class="slide-eyebrow">10 &middot; References</div>
+    <h2>For further reading</h2>
+    <p class="lede">Where the ideas on this deck's slides come from, for anyone who wants
+      to go deeper.</p>
+    <ul class="ref-list slide-body">
+      <li>Held, M. &amp; Karp, R. (1962) &mdash; <a href="https://en.wikipedia.org/wiki/Held%E2%80%93Karp_algorithm" target="_blank" rel="noopener">A Dynamic Programming Approach to Sequencing Problems</a> &mdash; the bitmask-DP technique discussed on the alternatives slide.</li>
+      <li>Wikipedia &mdash; <a href="https://en.wikipedia.org/wiki/Hamiltonian_path_problem" target="_blank" rel="noopener">Hamiltonian path problem</a> &mdash; definitions, complexity, and known special cases.</li>
+      <li>Garey, M. &amp; Johnson, D. &mdash; <em>Computers and Intractability</em> &mdash; the standard reference establishing NP-completeness for this problem.</li>
+      <li>Wikipedia &mdash; <a href="https://en.wikipedia.org/wiki/Branch_and_bound" target="_blank" rel="noopener">Branch and bound</a> &mdash; general technique behind the pruning alternative.</li>
+      <li>Wikipedia &mdash; <a href="https://en.wikipedia.org/wiki/Travelling_salesman_problem" target="_blank" rel="noopener">Traveling Salesman Problem</a> &mdash; the closely related "shortest tour" variant mentioned on the applications slide.</li>
+    </ul>
+  </section>
+
+  <!-- ============================================================== -->
   <section class="slide" id="slide-end">
     <div class="slide-eyebrow">Fin</div>
     <h1>Go replay it.</h1>
@@ -228,7 +377,7 @@
       you'd like &mdash; try pausing right before a dead end and guessing which vertex the
       path can't recover from.</p>
     <div class="end-actions">
-      <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(5)').click()">&#8592; Back to live demo</button>
+      <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(6)').click()">&#8592; Back to live demo</button>
       <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(1)').click()">&#8634; Restart deck</button>
     </div>
   </section>

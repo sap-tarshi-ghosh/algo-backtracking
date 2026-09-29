@@ -634,3 +634,30 @@ button { font-family: inherit; }
 }
 .hub-link:hover { border-color: var(--accent-amber); color: var(--accent-amber); }
 
+
+/* =========================================================================
+   New slide content types: complexity table, pro/con lists, rule list,
+   references list (added for the brute-force/complexity/alternatives/
+   applications/references slides).
+   ========================================================================= */
+
+.complexity-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.82rem; }
+.complexity-table th, .complexity-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; line-height: 1.5; }
+.complexity-table th { color: var(--accent-amber); font-weight: 600; background: var(--bg-panel-alt); font-size: 0.78rem; }
+.complexity-table td.metric { color: var(--text-dim); white-space: nowrap; }
+
+.pro-con-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.pro-con-list li { font-size: 0.88rem; color: var(--text-dim); padding-left: 1.3em; position: relative; line-height: 1.5; }
+.pro-con-list.pros li::before { content: "+"; color: var(--accent-cyan); position: absolute; left: 0; font-weight: 700; }
+.pro-con-list.cons li::before { content: "\2212"; color: var(--accent-red); position: absolute; left: 0; font-weight: 700; }
+
+.ref-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ref-list li { font-size: 0.9rem; color: var(--text-dim); line-height: 1.55; padding-left: 1.3em; position: relative; }
+.ref-list li::before { content: "\2192"; position: absolute; left: 0; color: var(--accent-amber); }
+.ref-list a { color: var(--accent-cyan); text-decoration: none; border-bottom: 1px dotted var(--accent-cyan); }
+.ref-list a:hover { color: var(--text-primary); border-color: var(--text-primary); }
+
+.rule-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.rule-item { display: flex; gap: 10px; align-items: baseline; font-size: 0.86rem; }
+.rule-name { font-family: var(--font-mono); color: var(--accent-violet); font-weight: 700; min-width: 108px; flex-shrink: 0; }
+.rule-desc { color: var(--text-dim); line-height: 1.5; }

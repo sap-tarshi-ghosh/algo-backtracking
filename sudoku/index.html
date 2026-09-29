@@ -65,10 +65,48 @@
   </section>
 
   <!-- ==================================================================
+       SLIDE 2b - Why not brute force?
+       ================================================================== -->
+  <section class="slide" id="slide-brute-force">
+    <div class="slide-eyebrow">02 &middot; Why not brute force?</div>
+    <h2>The obvious approach, first</h2>
+    <p class="lede">Before backtracking, it's worth seeing the approach it replaces: generate
+      every possible way to fill the blanks, then check each one. It's simple to write and
+      impossible to argue with &mdash; it's also the reason backtracking exists.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Generate &amp; test</h3>
+        <p>Fill every empty cell with some digit 1&ndash;9, in every possible combination,
+          then check whether the finished board obeys the row/column/box rules. If it
+          doesn't, throw the whole grid away and try the next combination.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">How many combinations is that, really?</button>
+        <div class="reveal-content">This puzzle has 20 blank cells, so brute force would
+          consider up to 9<sup>20</sup> &asymp; 1.2 &times; 10<sup>19</sup> candidate grids
+          before the row/column/box rule ever gets consulted. The live demo you'll run
+          later solves the same puzzle in about 320 steps.</div>
+      </div>
+      <div class="card animate-in">
+        <h3>What backtracking changes</h3>
+        <p>Instead of filling in the entire board and checking it once at the end,
+          backtracking checks the row/column/box rule after <em>every single digit</em>
+          it places. The moment a digit conflicts with what's already on the board, it's
+          rejected immediately &mdash; no time is ever spent completing a grid that was
+          already doomed by its third cell.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">So is backtracking a different algorithm?</button>
+        <div class="reveal-content">Not really &mdash; it's the same generate-and-test idea,
+          just interleaved with validation instead of run afterward. That interleaving is
+          the entire trick: it turns "check 10<sup>19</sup> finished grids" into "check one
+          digit at a time and walk away from bad ones immediately."</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
        SLIDE 3 - The algorithm, walked through
        ================================================================== -->
   <section class="slide" id="slide-code">
-    <div class="slide-eyebrow">02 &middot; The algorithm</div>
+    <div class="slide-eyebrow">03 &middot; The algorithm</div>
     <h2>Thirteen lines, read top to bottom</h2>
     <p class="lede">This is the exact function the live demo executes later &mdash; not
       pseudocode standing in for it. Click through each block to see what it's responsible for.</p>
@@ -108,7 +146,7 @@
        SLIDE 4 - Recursion tree concept
        ================================================================== -->
   <section class="slide" id="slide-tree-concept">
-    <div class="slide-eyebrow">03 &middot; Seeing the recursion</div>
+    <div class="slide-eyebrow">04 &middot; Seeing the recursion</div>
     <h2>Every call is a node. Every guess is an edge.</h2>
     <p class="lede">Stack depth and recursion tree depth are the same number &mdash; the
       tree below is just the call stack's entire history laid out at once, instead of only
@@ -147,7 +185,7 @@
   <section class="slide" id="slide-live-demo">
     <div class="demo-header">
       <div>
-        <div class="slide-eyebrow">04 &middot; Live execution</div>
+        <div class="slide-eyebrow">05 &middot; Live execution</div>
         <h2>Watch it solve, one line at a time</h2>
       </div>
       <div class="demo-note" id="demo-note"></div>
@@ -205,10 +243,119 @@
   </section>
 
   <!-- ==================================================================
+       SLIDE 5b - Complexity & trade-offs
+       ================================================================== -->
+  <section class="slide" id="slide-complexity">
+    <div class="slide-eyebrow">06 &middot; Complexity &amp; trade-offs</div>
+    <h2>What backtracking actually buys you</h2>
+    <p class="lede">m is the number of empty cells (20 in this puzzle). Both approaches
+      share the same worst-case bound &mdash; the difference is how often that worst case
+      actually gets reached in practice.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Time &amp; space</h3>
+        <table class="complexity-table">
+          <tr><th>Metric</th><th>Brute force</th><th>Backtracking</th></tr>
+          <tr><td class="metric">Best case</td><td>&Omega;(9<sup>m</sup>) &mdash; still generates every grid</td><td>O(m) &mdash; every cell forced, zero backtracks</td></tr>
+          <tr><td class="metric">Worst case</td><td>O(9<sup>m</sup>&middot;m) &mdash; generate, then validate each</td><td>O(9<sup>m</sup>) &mdash; same bound, pruned far earlier in practice</td></tr>
+          <tr><td class="metric">Space</td><td>O(m) per candidate grid held</td><td>O(m) recursion depth + the 9&times;9 board</td></tr>
+        </table>
+        <p style="margin-top:10px;">On this puzzle: brute force's theoretical ceiling is
+          ~10<sup>19</sup> grids; the live demo you ran needed 320 steps.</p>
+      </div>
+      <div class="card animate-in">
+        <h3>Advantages &amp; disadvantages</h3>
+        <ul class="pro-con-list pros">
+          <li>Prunes invalid branches immediately, instead of after filling the whole board</li>
+          <li>Simple to implement correctly &mdash; no complex data structures required</li>
+          <li>Complete: guaranteed to find a solution if one exists</li>
+          <li>Easy to extend with heuristics (ordering, constraint propagation)</li>
+        </ul>
+        <ul class="pro-con-list cons" style="margin-top:10px;">
+          <li>Worst-case time is still exponential &mdash; some puzzles resist pruning</li>
+          <li>Naive cell ordering can leave a lot of avoidable backtracking on the table</li>
+          <li>Recursion depth is bounded by empty-cell count, but very large grids stress the call stack</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SLIDE 5c - Alternative approaches
+       ================================================================== -->
+  <section class="slide" id="slide-alternatives">
+    <div class="slide-eyebrow">07 &middot; Alternative approaches</div>
+    <h2>Smarter than plain backtracking</h2>
+    <p class="lede">Two families of techniques that real Sudoku solvers use instead of (or
+      alongside) the naive row-major search this deck demonstrates.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Minimum Remaining Values (MRV)</h3>
+        <p>Instead of always picking the next empty cell in reading order, pick whichever
+          empty cell currently has the <em>fewest</em> legal candidates. A cell with only
+          one option gets resolved immediately; a cell with many options is deferred until
+          other placements narrow it down &mdash; which shrinks the branching factor exactly
+          where it matters most.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">Why does this help so much?</button>
+        <div class="reveal-content">Backtracking's cost is dominated by how wide each
+          branch is. Choosing the most-constrained cell first means most branches are
+          narrow (often width 1), so the search tree stays shallow and thin instead of
+          wide and bushy.</div>
+      </div>
+      <div class="card animate-in">
+        <h3>Human-style rule solver</h3>
+        <p>Real players (and many fast solvers) skip guessing entirely for easy and medium
+          puzzles, using pure logical deduction:</p>
+        <div class="rule-list">
+          <div class="rule-item"><span class="rule-name">Naked Single</span><span class="rule-desc">a cell has exactly one candidate left &mdash; fill it.</span></div>
+          <div class="rule-item"><span class="rule-name">Hidden Single</span><span class="rule-desc">a candidate fits only one cell in a unit, even if that cell has others too.</span></div>
+          <div class="rule-item"><span class="rule-name">Naked Pair</span><span class="rule-desc">two cells in a unit share the same two candidates &mdash; erase those two elsewhere in the unit.</span></div>
+          <div class="rule-item"><span class="rule-name">Hidden Pair</span><span class="rule-desc">two candidates are confined to the same two cells &mdash; erase every other candidate from those cells.</span></div>
+          <div class="rule-item"><span class="rule-name">Naked Triple</span><span class="rule-desc">three cells jointly contain only three candidates &mdash; erase those elsewhere in the unit.</span></div>
+          <div class="rule-item"><span class="rule-name">Hidden Triple</span><span class="rule-desc">three candidates are confined to the same three cells &mdash; erase every other candidate there.</span></div>
+        </div>
+        <p style="margin-top:10px;">Only when these rules stall does a rule-based solver
+          fall back to guessing &mdash; at which point it's doing backtracking again.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SLIDE 5d - Real-world applications
+       ================================================================== -->
+  <section class="slide" id="slide-applications">
+    <div class="slide-eyebrow">08 &middot; Real-world applications</div>
+    <h2>The same shape shows up outside puzzles</h2>
+    <p class="lede">Sudoku is a constraint-satisfaction problem wearing a game's clothing
+      &mdash; the underlying pattern (fill in unknowns without violating conflict rules)
+      recurs well beyond the grid.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Resource allocation</h3>
+        <p>Assigning a limited pool of interchangeable resources &mdash; exam rooms, radio
+          frequencies, delivery time slots &mdash; to requests that must not conflict with
+          each other is the same constraint-satisfaction shape as Sudoku's row/column/box
+          rule, just with different "units" defining what may not collide.</p>
+      </div>
+      <div class="card animate-in">
+        <h3>Puzzle &amp; game applications</h3>
+        <p>Beyond Sudoku itself: KenKen, Kakuro, and crossword construction all reduce to
+          constraint satisfaction over a grid. Game studios also use backtracking-style
+          solvers to auto-generate and validate procedural puzzle content &mdash; confirming
+          a randomly generated puzzle actually has a unique, solvable answer before showing
+          it to a player.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================
        SLIDE 6 - Recap
        ================================================================== -->
   <section class="slide" id="slide-recap">
-    <div class="slide-eyebrow">05 &middot; Recap</div>
+    <div class="slide-eyebrow">09 &middot; Recap</div>
     <h2>What you just watched</h2>
     <p class="lede">Three ideas, all visible directly in the trace you just stepped through.</p>
     <div class="recap-grid slide-body">
@@ -234,6 +381,23 @@
   </section>
 
   <!-- ==================================================================
+       SLIDE 6b - References
+       ================================================================== -->
+  <section class="slide" id="slide-references">
+    <div class="slide-eyebrow">10 &middot; References</div>
+    <h2>For further reading</h2>
+    <p class="lede">Where the ideas on this deck's slides come from, for anyone who wants
+      to go deeper.</p>
+    <ul class="ref-list slide-body">
+      <li>Norvig, P. &mdash; <a href="https://norvig.com/sudoku.html" target="_blank" rel="noopener">"Solving Every Sudoku Puzzle"</a> &mdash; constraint propagation plus search, the basis of the MRV discussion.</li>
+      <li>Wikipedia &mdash; <a href="https://en.wikipedia.org/wiki/Sudoku_solving_algorithms" target="_blank" rel="noopener">Sudoku solving algorithms</a> &mdash; overview of backtracking, constraint propagation, and dancing links approaches.</li>
+      <li>Wikipedia &mdash; <a href="https://en.wikipedia.org/wiki/Backtracking" target="_blank" rel="noopener">Backtracking (algorithm)</a> &mdash; the general technique this deck demonstrates.</li>
+      <li>Knuth, D. &mdash; <a href="https://en.wikipedia.org/wiki/Dancing_Links" target="_blank" rel="noopener">Dancing Links / Algorithm X</a> &mdash; an efficient exact-cover formulation Sudoku can be reduced to.</li>
+      <li>Cormen, Leiserson, Rivest &amp; Stein &mdash; <em>Introduction to Algorithms</em> &mdash; standard reference for backtracking's complexity analysis.</li>
+    </ul>
+  </section>
+
+  <!-- ==================================================================
        SLIDE 7 - End
        ================================================================== -->
   <section class="slide" id="slide-end">
@@ -243,7 +407,7 @@
       you'd like &mdash; try slowing it down around one of the three dead ends and predicting
       the next line before it highlights.</p>
     <div class="end-actions">
-      <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(5)').click()">&#8592; Back to live demo</button>
+      <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(6)').click()">&#8592; Back to live demo</button>
       <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(1)').click()">&#8634; Restart deck</button>
     </div>
   </section>

@@ -60,8 +60,44 @@
   </section>
 
   <!-- ============================================================== -->
+  <section class="slide" id="slide-brute-force">
+    <div class="slide-eyebrow">02 &middot; Why not brute force?</div>
+    <h2>The obvious approach, first</h2>
+    <p class="lede">Before backtracking, it's worth seeing the approach it replaces: generate
+      every possible way to assign colors to all n vertices, then check each one. Simple,
+      correct, and the exact reason backtracking exists.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Generate &amp; test</h3>
+        <p>Assign every vertex a color from 1 to k, in every possible combination, then
+          check whether any edge connects two same-colored vertices. If one does, discard
+          the whole assignment and try the next combination.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">How many combinations is that, really?</button>
+        <div class="reveal-content">This graph has 10 vertices and k = 3 colors, so brute
+          force would consider up to 3<sup>10</sup> = 59,049 full assignments before ever
+          checking an edge. That's small enough to brute force here &mdash; but the same
+          idea on a 40-vertex graph would mean checking 3<sup>40</sup> &asymp; 1.2 &times; 10<sup>19</sup>
+          assignments, which is where the difference starts to matter enormously.</div>
+      </div>
+      <div class="card animate-in">
+        <h3>What backtracking changes</h3>
+        <p>Instead of coloring every vertex and checking the whole graph once at the end,
+          backtracking checks each vertex's neighbors the moment it's colored. An
+          assignment that breaks a rule is rejected immediately &mdash; no time is spent
+          finishing an assignment that was already doomed by its second vertex.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">So is backtracking a different algorithm?</button>
+        <div class="reveal-content">Not really &mdash; it's the same generate-and-test idea,
+          just interleaved with validation instead of run afterward. That's the entire
+          trick: it turns "check every finished assignment" into "check one vertex at a
+          time and abandon bad ones immediately."</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
   <section class="slide" id="slide-code">
-    <div class="slide-eyebrow">02 &middot; The algorithm</div>
+    <div class="slide-eyebrow">03 &middot; The algorithm</div>
     <h2>Eleven lines, read top to bottom</h2>
     <p class="lede">This is the exact function the live demo executes &mdash; vertices are
       visited in index order, colors tried from 1 up to k.</p>
@@ -98,7 +134,7 @@
 
   <!-- ============================================================== -->
   <section class="slide" id="slide-tree-concept">
-    <div class="slide-eyebrow">03 &middot; Seeing the recursion</div>
+    <div class="slide-eyebrow">04 &middot; Seeing the recursion</div>
     <h2>Every call is a node. Every color tried is an edge.</h2>
     <p class="lede">The recursion tree below is the entire call-stack history laid out at
       once, instead of only showing you the current top frame.</p>
@@ -133,7 +169,7 @@
   <section class="slide" id="slide-live-demo">
     <div class="demo-header">
       <div>
-        <div class="slide-eyebrow">04 &middot; Live execution</div>
+        <div class="slide-eyebrow">05 &middot; Live execution</div>
         <h2>Watch it color, one line at a time</h2>
       </div>
       <div class="demo-note" id="demo-note"></div>
@@ -191,8 +227,108 @@
   </section>
 
   <!-- ============================================================== -->
+  <section class="slide" id="slide-complexity">
+    <div class="slide-eyebrow">06 &middot; Complexity &amp; trade-offs</div>
+    <h2>What backtracking actually buys you</h2>
+    <p class="lede">n is the number of vertices (10 here) and k the number of colors (3
+      here). Both approaches share the same worst-case bound &mdash; the difference is how
+      often that worst case actually gets reached.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Time &amp; space</h3>
+        <table class="complexity-table">
+          <tr><th>Metric</th><th>Brute force</th><th>Backtracking</th></tr>
+          <tr><td class="metric">Best case</td><td>&Omega;(k<sup>n</sup>) &mdash; still generates every assignment</td><td>O(n&middot;k) &mdash; every vertex resolved on its first valid color</td></tr>
+          <tr><td class="metric">Worst case</td><td>O(k<sup>n</sup>&middot;E) &mdash; generate, then validate against every edge</td><td>O(k<sup>n</sup>) &mdash; same bound, pruned far earlier in practice</td></tr>
+          <tr><td class="metric">Space</td><td>O(n) per candidate assignment held</td><td>O(n) recursion depth + the color array</td></tr>
+        </table>
+        <p style="margin-top:10px;">On this graph: brute force checks up to 3<sup>10</sup> =
+          59,049 assignments; the live demo you ran needed 214 steps.</p>
+      </div>
+      <div class="card animate-in">
+        <h3>Advantages &amp; disadvantages</h3>
+        <ul class="pro-con-list pros">
+          <li>Rejects a bad assignment at the first conflicting edge, not after coloring everyone</li>
+          <li>Simple, general-purpose &mdash; works for any graph and any k without modification</li>
+          <li>Complete: guaranteed to find a valid k-coloring if one exists</li>
+          <li>Composes naturally with better vertex/color ordering heuristics</li>
+        </ul>
+        <ul class="pro-con-list cons" style="margin-top:10px;">
+          <li>Worst-case time is still exponential in the number of vertices</li>
+          <li>Finding the true chromatic number (smallest possible k) is NP-hard &mdash; this only answers "does k work?"</li>
+          <li>Naive vertex ordering can trigger far more backtracking than necessary</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <section class="slide" id="slide-alternatives">
+    <div class="slide-eyebrow">07 &middot; Alternative approaches</div>
+    <h2>Smarter than plain backtracking</h2>
+    <p class="lede">Two very different families of techniques used in practice instead of
+      (or alongside) exhaustive backtracking.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Greedy coloring</h3>
+        <p>Visit vertices in some order and assign each the smallest-numbered color not
+          already used by an already-colored neighbor &mdash; no recursion, no undoing,
+          just one pass. It's fast (roughly O(V + E)) but offers no guarantee: it can use
+          more colors than necessary, and depending on vertex order it may fail to find a
+          valid coloring for a fixed k even when one exists.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">Can ordering fix that?</button>
+        <div class="reveal-content">Partially &mdash; the Welsh&ndash;Powell heuristic colors
+          highest-degree vertices first, which tends to use noticeably fewer colors than a
+          arbitrary order. It still isn't guaranteed optimal or even guaranteed to succeed
+          for a fixed k, which is exactly the gap backtracking's guarantee fills.</div>
+      </div>
+      <div class="card animate-in">
+        <h3>SAT / Boolean Satisfiability</h3>
+        <p>Encode the whole problem as a boolean formula: one variable per (vertex, color)
+          pair, clauses forcing "each vertex gets exactly one color," and clauses forcing
+          "no edge's two endpoints share a color." Hand that formula to a modern SAT solver
+          (DPLL/CDCL-based) and let decades of solver engineering find a satisfying
+          assignment &mdash; or prove none exists.</p>
+        <button class="reveal-toggle" data-reveal-toggle aria-expanded="false">Why bother, if it's the same problem?</button>
+        <div class="reveal-content">Modern SAT solvers include learned clauses, clever
+          branching heuristics, and years of low-level optimization that a hand-rolled
+          backtracking search doesn't have. For large, hard instances, reducing to SAT and
+          calling an off-the-shelf solver often massively outperforms a naive custom search.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <section class="slide" id="slide-applications">
+    <div class="slide-eyebrow">08 &middot; Real-world applications</div>
+    <h2>The same shape shows up outside graphs</h2>
+    <p class="lede">Graph coloring is a stand-in for "assign labels from a small pool so
+      that conflicting things never match" &mdash; a pattern with genuinely surprising reach.</p>
+
+    <div class="two-col slide-body">
+      <div class="card animate-in">
+        <h3>Map coloring</h3>
+        <p>The original motivating example: color regions on a map so no two adjacent
+          regions share a color. The famous Four Color Theorem says four colors always
+          suffice for any planar map &mdash; a result proved (controversially, using a
+          computer) by Appel and Haken in 1976.</p>
+      </div>
+      <div class="card animate-in">
+        <h3>CPU register allocation</h3>
+        <p>A compiler builds an "interference graph" where two variables are connected if
+          they're both alive at the same point in a program. Assigning each variable a
+          physical CPU register such that no two interfering variables share one is
+          <em>literally</em> graph coloring, with k = the number of available registers
+          &mdash; this is exactly how Chaitin's classic register-allocation algorithm works.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
   <section class="slide" id="slide-recap">
-    <div class="slide-eyebrow">05 &middot; Recap</div>
+    <div class="slide-eyebrow">09 &middot; Recap</div>
     <h2>What you just watched</h2>
     <p class="lede">Three ideas, all visible directly in the trace you just stepped through.</p>
     <div class="recap-grid slide-body">
@@ -218,6 +354,21 @@
   </section>
 
   <!-- ============================================================== -->
+  <section class="slide" id="slide-references">
+    <div class="slide-eyebrow">10 &middot; References</div>
+    <h2>For further reading</h2>
+    <p class="lede">Where the ideas on this deck's slides come from, for anyone who wants
+      to go deeper.</p>
+    <ul class="ref-list slide-body">
+      <li>Appel, K. &amp; Haken, W. (1976) &mdash; <a href="https://en.wikipedia.org/wiki/Four_color_theorem" target="_blank" rel="noopener">The Four Color Theorem</a> &mdash; the classic map-coloring result.</li>
+      <li>Chaitin, G. (1982) &mdash; <a href="https://en.wikipedia.org/wiki/Register_allocation" target="_blank" rel="noopener">"Register allocation via coloring"</a> &mdash; the compiler application discussed on the applications slide.</li>
+      <li>Karp, R. (1972) &mdash; <a href="https://en.wikipedia.org/wiki/Karp%27s_21_NP-complete_problems" target="_blank" rel="noopener">Reducibility Among Combinatorial Problems</a> &mdash; establishes graph k-coloring as NP-complete.</li>
+      <li>Wikipedia &mdash; <a href="https://en.wikipedia.org/wiki/Graph_coloring" target="_blank" rel="noopener">Graph coloring</a> &mdash; general overview, including greedy and Welsh&ndash;Powell ordering.</li>
+      <li>Wikipedia &mdash; <a href="https://en.wikipedia.org/wiki/Boolean_satisfiability_problem" target="_blank" rel="noopener">Boolean satisfiability problem</a> &mdash; background for the SAT-based alternative.</li>
+    </ul>
+  </section>
+
+  <!-- ============================================================== -->
   <section class="slide" id="slide-end">
     <div class="slide-eyebrow">Fin</div>
     <h1>Go replay it.</h1>
@@ -225,7 +376,7 @@
       you'd like &mdash; try pausing right before one of the dead ends and guessing which
       color will fail next.</p>
     <div class="end-actions">
-      <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(5)').click()">&#8592; Back to live demo</button>
+      <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(6)').click()">&#8592; Back to live demo</button>
       <button class="tbtn" onclick="document.querySelector('.deck-dot:nth-child(1)').click()">&#8634; Restart deck</button>
     </div>
   </section>
